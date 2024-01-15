@@ -30,7 +30,7 @@ app.post('/paypal/success', async (req, res) => {
       { new: true, upsert: true }
     );
 
-    const updatedURL = `https://donepoxvnn.github.io?user_id=${user_id}`;
+    const updatedURL = `https://api.telegram.org/bot6560826400:AAHRmt4LcQRrd39cB8ebYmUrOxGDVK3PBos/sendMessage?text=done&chat_id=${user_id}`;
     res.status(200).json({ updatedURL, updatedCredits });
   } catch (error) {
     console.error(error);
