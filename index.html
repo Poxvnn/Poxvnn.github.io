@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PayPal Subscriptions Checkout</title>
+    <!-- Thêm link CSS của Bootstrap (chọn phiên bản phù hợp với bạn) -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+</head>
+<body>
+
+<!-- Container để hiển thị tùy chọn Credit và nút "Order" -->
+<div class="container mt-5">
+    <label for="creditOptions">Choose Credit Package:</label>
+    <select id="creditOptions" class="form-control mb-3">
+        <option value="10" data-price="4.9">$10 Credits</option>
+        <option value="22" data-price="9.9">22 Credits</option>
+        <option value="48" data-price="19.9">48 Credits</option>
+        <option value="130" data-price="49.9">130 Credits</option>
+        <option value="280" data-price="99.9">280 Credits</option>
+        <option value="450" data-price="149.9">450 Credits</option>
+        <option value="640" data-price="199.9">640 Credits</option>
+        <option value="1020" data-price="299.9">1020 Credits</option>
+    </select>
+    <button id="orderButton" class="btn btn-primary">Order</button>
+    <div id="paypal-button-container"></div>
+</div>
+
+<!-- Container để hiển thị thông báo sau khi thanh toán -->
+<div id="order-status" class="container mt-3"></div>
+
+<script src="https://www.paypal.com/sdk/js?client-id=AZ3xoRwiYl7qxzgBTGvboSil2vAC1z-1xsu5peZFZWqPFkweP0se7wewKrO89S_gSnl_SEswIJWFY359&vault=true&intent=subscription" data-sdk-integration-source="button-factory"></script>
+<script>
+    document.getElementById('orderButton').addEventListener('click', function() {
+        // Gọi hàm khi nút "Order" được nhấp
+        handleOrder();
+    });
+
+    function handleOrder() {
+        const selectedOption = document.getElementById('creditOptions');
+        const quantity = selectedOption.value;
+        const price = selectedOption.options[selectedOption.selectedIndex].getAttribute('data-price');
+        const orderStatusContainer = document.getElementById('order-status');
+        
+        // Ẩn đi chỗ chọn số lượng và nút "Order"
+        document.getElementById('creditOptions').style.display = 'none';
+        document.getElementById('orderButton').style.display = 'none';
+
+        // Hiển thị mẹo thanh toán (Bạn có thể tùy chỉnh thông báo theo ý muốn)
+        orderStatusContainer.innerHTML = `
+            <div class="alert alert-info" role="alert">
+                Please complete your order using the PayPal button. You are purchasing ${quantity} Credits for $${price}.
+            </div>
+        `;
+
+        // Kích hoạt nút PayPal khi mẹo thanh toán được hiển thị
+        paypal.Buttons({
+            style: {
+                shape: 'pill',
+                color: 'gold',
+                layout: 'vertical',
+                label: 'paypal'
+            },
+            createSubscription: function(data, actions) {
+                return actions.subscription.create({
+                    plan_id: 'P-1P266846ED5630914MWSKAMY',
+                    quantity: parseInt(quantity)
+                });
+            },
+            onApprove: function(data, actions) {
+                alert(data.subscriptionID); // Optional: You can add success message for the subscriber here
+            }
+        }).render('#paypal-button-container');
+    }
+</script>
+
+<!-- Thêm script để sử dụng Bootstrap JavaScript (chọn phiên bản phù hợp với bạn) -->
+<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.0.7/dist/umd/popper.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+</body>
+</html>
