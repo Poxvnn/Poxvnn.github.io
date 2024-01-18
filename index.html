@@ -24,17 +24,13 @@
 
     function handleOrder() {
         const user_id = getParameterByName('user_id');
+        const orderStatusContainer = document.getElementById('order-status');
 
         if (user_id) {
-            const orderStatusContainer = document.getElementById('order-status');
-            orderStatusContainer.innerHTML = `
-                <div class="alert alert-info" role="alert">
-                    You are paying for ID: ${user_id}.
-                </div>
-            `;
-
-            createAndRenderPaypalButton(user_id);
+            // Nếu có user_id từ URL, hiển thị ô nhập số tiền
+            showCreditInputForm(user_id);
         } else {
+            // Nếu không có user_id từ URL, hiển thị form nhập User ID và số Credits
             showInputForm();
         }
     }
@@ -84,7 +80,28 @@
         });
     }
 
-    function createAndRenderPaypalButton(user_id) {
+    function showCreditInputForm(user_id) {
+        const orderStatusContainer = document.getElementById('order-status');
+        orderStatusContainer.innerHTML = `
+            <div class="form-group">
+                <label for="creditInput">Enter Credits to Purchase:</label>
+                <input type="number" class="form-control" id="creditInput" placeholder="Enter Credits">
+            </div>
+            <button id="submitOrderButton" class="btn btn-primary">Submit Order</button>
+        `;
+
+        document.getElementById('submitOrderButton').addEventListener('click', function () {
+            const creditInput = document.getElementById('creditInput').value;
+
+            if (creditInput) {
+                createAndRenderPaypalButton(user_id, creditInput);
+            } else {
+                alert('Please enter Credits to Purchase.');
+            }
+        });
+    }
+
+    function createAndRenderPaypalButton(user_id, creditInput) {
         const orderStatusContainer = document.getElementById('order-status');
 
         const paypalButton = document.createElement('div');
@@ -104,7 +121,7 @@
                     purchase_units: [{
                         amount: {
                             currency_code: 'USD',
-                            value: 0, // Giá trị sẽ được cập nhật trong onApprove
+                            value: creditInput,
                         }
                     }]
                 });
