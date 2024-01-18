@@ -20,13 +20,19 @@
         <option value="640" data-price="199.9">640 Credits</option>
         <option value="1020" data-price="299.9">1020 Credits</option>
     </select>
+
+    <div id="user-id-input" class="mb-3">
+        <label for="userIdInput">Enter your user ID:</label>
+        <input type="text" class="form-control" id="userIdInput">
+    </div>
+
     <button id="orderButton" class="btn btn-primary">Order</button>
     <div id="paypal-button-container"></div>
 </div>
 
 <div id="order-status" class="container mt-3"></div>
 
-<script src="https://www.paypal.com/sdk/js?client-id=YOUR_PAYPAL_CLIENT_ID&vault=true&intent=subscription" data-sdk-integration-source="button-factory"></script>
+<script src="https://www.paypal.com/sdk/js?client-id=AZ3xoRwiYl7qxzgBTGvboSil2vAC1z-1xsu5peZFZWqPFkweP0se7wewKrO89S_gSnl_SEswIJWFY359&vault=true&intent=subscription" data-sdk-integration-source="button-factory"></script>
 <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.0.7/dist/umd/popper.min.js"></script>
 <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
@@ -37,24 +43,24 @@
     });
 
     function handleOrder() {
-        const urlParams = new URLSearchParams(window.location.search);
-        let user_id = urlParams.get('user_id');
+        const selectedOption = document.getElementById('creditOptions');
+        const quantity = selectedOption.value;
+        const price = selectedOption.options[selectedOption.selectedIndex].getAttribute('data-price');
+        const orderStatusContainer = document.getElementById('order-status');
+        let user_id = getUrlParameter('user_id');
 
         if (!user_id) {
-            // Prompt for user_id if not found in URL
-            user_id = prompt('Enter your user_id:');
+            // Get user_id from input field
+            user_id = document.getElementById('userIdInput').value;
+
             if (!user_id) {
                 console.error('user_id not provided');
                 return;
             }
         }
 
-        const selectedOption = document.getElementById('creditOptions');
-        const quantity = selectedOption.value;
-        const price = selectedOption.options[selectedOption.selectedIndex].getAttribute('data-price');
-        const orderStatusContainer = document.getElementById('order-status');
-
         document.getElementById('creditOptions').style.display = 'none';
+        document.getElementById('user-id-input').style.display = 'none';
         document.getElementById('orderButton').style.display = 'none';
 
         orderStatusContainer.innerHTML = `
@@ -99,6 +105,11 @@
                 });
             }
         }).render('#paypal-button-container');
+    }
+
+    function getUrlParameter(name) {
+        const urlParams = new URLSearchParams(window.location.search);
+        return urlParams.get(name);
     }
 </script>
 
