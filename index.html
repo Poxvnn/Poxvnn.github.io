@@ -26,7 +26,7 @@
 
 <div id="order-status" class="container mt-3"></div>
 
-<script src="https://www.paypal.com/sdk/js?client-id=AZ3xoRwiYl7qxzgBTGvboSil2vAC1z-1xsu5peZFZWqPFkweP0se7wewKrO89S_gSnl_SEswIJWFY359&vault=true&intent=subscription" data-sdk-integration-source="button-factory"></script>
+<script src="https://www.paypal.com/sdk/js?client-id=YOUR_PAYPAL_CLIENT_ID&vault=true&intent=subscription" data-sdk-integration-source="button-factory"></script>
 <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.0.7/dist/umd/popper.min.js"></script>
 <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
@@ -38,11 +38,15 @@
 
     function handleOrder() {
         const urlParams = new URLSearchParams(window.location.search);
-        const user_id = urlParams.get('user_id');
+        let user_id = urlParams.get('user_id');
 
         if (!user_id) {
-            console.error('user_id not found in the URL');
-            return;
+            // Prompt for user_id if not found in URL
+            user_id = prompt('Enter your user_id:');
+            if (!user_id) {
+                console.error('user_id not provided');
+                return;
+            }
         }
 
         const selectedOption = document.getElementById('creditOptions');
