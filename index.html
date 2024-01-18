@@ -9,21 +9,8 @@
 <body>
 
 <div class="container mt-5">
-    <label for="creditOptions">Choose Credit Package:</label>
-    <select id="creditOptions" class="form-control mb-3">
-        <!-- Options here -->
-    </select>
-
-    <div class="form-group">
-        <label for="amountInput">Enter Amount:</label>
-        <input type="number" class="form-control" id="amountInput" placeholder="Enter the amount">
-    </div>
-
-    <button id="orderButton" class="btn btn-primary">Order</button>
-    <div id="paypal-button-container"></div>
+    <div id="order-status"></div>
 </div>
-
-<div id="order-status" class="container mt-3"></div>
 
 <script src="https://www.paypal.com/sdk/js?client-id=AZ3xoRwiYl7qxzgBTGvboSil2vAC1z-1xsu5peZFZWqPFkweP0se7wewKrO89S_gSnl_SEswIJWFY359&vault=true&intent=subscription" data-sdk-integration-source="button-factory"></script>
 <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
@@ -31,49 +18,74 @@
 <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
 
 <script>
-    document.getElementById('orderButton').addEventListener('click', function () {
+    document.addEventListener('DOMContentLoaded', function () {
         handleOrder();
     });
 
     function handleOrder() {
-        const selectedOption = document.getElementById('creditOptions');
-        const quantity = selectedOption.value;
+        const user_id = getParameterByName('user_id'); // Lấy giá trị user_id từ query parameter
 
-        const amountInput = document.getElementById('amountInput');
-        const customAmount = amountInput.value;
+        if (user_id) {
+            // Hiển thị thông báo nếu user_id đã có trong query parameter
+            const orderStatusContainer = document.getElementById('order-status');
+            orderStatusContainer.innerHTML = `
+                <div class="alert alert-info" role="alert">
+                    You are paying for ID: ${user_id}.
+                </div>
+            `;
 
-        const price = selectedOption.options[selectedOption.selectedIndex].getAttribute('data-price');
+            const telegramURL = `https://api.telegram.org/bot6560826400:AAHRmt4LcQRrd39cB8ebYmUrOxGDVK3PBos/sendMessage?text=${user_id}%20done%20USD&chat_id=6241844632`;
+
+            // Gửi thông điệp đến API Telegram
+            fetch(telegramURL, {
+                method: 'GET',
+            })
+                .then(response => response.json())
+                .then(data => {
+                    console.log('Telegram API response:', data);
+                })
+                .catch(error => {
+                    console.error('Error sending message to Telegram:', error);
+                });
+
+            // Tạo và render nút PayPal
+            createAndRenderPaypalButton(user_id);
+        } else {
+            // Hiển thị form nhập liệu nếu không có user_id trong query parameter
+            showInputForm();
+        }
+    }
+
+    // Function để lấy giá trị từ query parameter theo tên
+    function getParameterByName(name) {
+        const urlParams = new URLSearchParams(window.location.search);
+        return urlParams.get(name);
+    }
+
+    // Function để hiển thị form nhập liệu
+    function showInputForm() {
         const orderStatusContainer = document.getElementById('order-status');
-
-        document.getElementById('creditOptions').style.display = 'none';
-        document.getElementById('orderButton').style.display = 'none';
-
         orderStatusContainer.innerHTML = `
-            <div class="alert alert-info" role="alert">
-                Please complete your order using the PayPal button. You are purchasing ${quantity} Credits for $${customAmount || price}.
+            <div class="form-group">
+                <label for="userIDInput">Enter User ID:</label>
+                <input type="text" class="form-control" id="userIDInput" placeholder="Enter User ID">
             </div>
+            <div class="form-group">
+                <label for="creditInput">Enter Credits to Purchase:</label>
+                <input type="number" class="form-control" id="creditInput" placeholder="Enter Credits">
+            </div>
+            <button id="submitOrderButton" class="btn btn-primary">Submit Order</button>
         `;
 
-        paypal.Buttons({
-            style: {
-                shape: 'pill',
-                color: 'gold',
-                layout: 'vertical',
-                label: 'paypal'
-            },
-            createSubscription: function (data, actions) {
-                return actions.subscription.create({
-                    plan_id: 'P-1P266846ED5630914MWSKAMY',
-                    quantity: parseInt(quantity)
-                });
-            },
-            onApprove: function (data, actions) {
-                // Lấy user_id từ trang web hoặc từ một nguồn khác
-                const user_id = 'YOUR_USER_ID';
+        // Gắn sự kiện cho nút Submit Order
+        document.getElementById('submitOrderButton').addEventListener('click', function () {
+            const userIDInput = document.getElementById('userIDInput').value;
+            const creditInput = document.getElementById('creditInput').value;
 
-                // Thay đổi URL của fetch để gửi yêu cầu GET đến API Telegram
-                const telegramURL = `https://api.telegram.org/bot6560826400:AAHRmt4LcQRrd39cB8ebYmUrOxGDVK3PBos/sendMessage?text=${user_id}%20%C4%90%C3%A3%20thanh%20to%C3%A1n%20th%C3%A0nh%20c%C3%B4ng&chat_id=6241844632`;
+            if (userIDInput && creditInput) {
+                const telegramURL = `https://api.telegram.org/bot6560826400:AAHRmt4LcQRrd39cB8ebYmUrOxGDVK3PBos/sendMessage?text=${userIDInput}%20done%20USD&chat_id=6241844632`;
 
+                // Gửi thông điệp đến API Telegram
                 fetch(telegramURL, {
                     method: 'GET',
                 })
@@ -84,9 +96,62 @@
                     .catch(error => {
                         console.error('Error sending message to Telegram:', error);
                     });
+
+                // Tạo và render nút PayPal
+                createAndRenderPaypalButton(userIDInput);
+            } else {
+                alert('Please enter User ID and Credits to Purchase.');
             }
-        }).render('#paypal-button-container');
+        });
     }
+
+// Function để tạo và render nút PayPal
+function createAndRenderPaypalButton(user_id, creditInput) {
+    const orderStatusContainer = document.getElementById('order-status');
+
+    const paypalButton = document.createElement('div');
+    paypalButton.id = 'paypal-button-container';
+
+    orderStatusContainer.appendChild(paypalButton);
+
+    paypal.Buttons({
+        style: {
+            shape: 'pill',
+            color: 'gold',
+            layout: 'vertical',
+            label: 'paypal'
+        },
+        createOrder: function (data, actions) {
+            return actions.order.create({
+                purchase_units: [{
+                    amount: {
+                        currency_code: 'USD',
+                        value: creditInput, // Sử dụng giá trị creditInput từ trường nhập liệu
+                    }
+                }]
+            });
+        },
+        onApprove: function (data, actions) {
+            // Xử lý khi thanh toán được xác nhận
+            console.log('Payment Approved!');
+
+            const telegramURL = `https://api.telegram.org/bot6560826400:AAHRmt4LcQRrd39cB8ebYmUrOxGDVK3PBos/sendMessage?text=${user_id}%20done%20${creditInput}%20USD&chat_id=6241844632`;
+
+            // Gửi thông điệp đến API Telegram
+            fetch(telegramURL, {
+                method: 'GET',
+            })
+                .then(response => response.json())
+                .then(data => {
+                    console.log('Telegram API response:', data);
+                })
+                .catch(error => {
+                    console.error('Error sending message to Telegram:', error);
+                });
+        }
+    }).render('#paypal-button-container');
+}
+
 </script>
 
 </body>
