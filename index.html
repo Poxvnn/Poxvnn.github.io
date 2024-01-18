@@ -11,16 +11,14 @@
 <div class="container mt-5">
     <label for="creditOptions">Choose Credit Package:</label>
     <select id="creditOptions" class="form-control mb-3">
-        <option value="1" data-price="4.9">1 Credits</option>
-        <option value="10" data-price="4.9">$10 Credits</option>
-        <option value="22" data-price="9.9">22 Credits</option>
-        <option value="48" data-price="19.9">48 Credits</option>
-        <option value="130" data-price="49.9">130 Credits</option>
-        <option value="280" data-price="99.9">280 Credits</option>
-        <option value="450" data-price="149.9">450 Credits</option>
-        <option value="640" data-price="199.9">640 Credits</option>
-        <option value="1020" data-price="299.9">1020 Credits</option>
+        <!-- Options here -->
     </select>
+
+    <div class="form-group">
+        <label for="amountInput">Enter Amount:</label>
+        <input type="number" class="form-control" id="amountInput" placeholder="Enter the amount">
+    </div>
+
     <button id="orderButton" class="btn btn-primary">Order</button>
     <div id="paypal-button-container"></div>
 </div>
@@ -33,21 +31,17 @@
 <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
 
 <script>
-    document.getElementById('orderButton').addEventListener('click', function() {
+    document.getElementById('orderButton').addEventListener('click', function () {
         handleOrder();
     });
 
     function handleOrder() {
-        const urlParams = new URLSearchParams(window.location.search);
-        const user_id = urlParams.get('user_id');
-
-        if (!user_id) {
-            console.error('user_id not found in the URL');
-            return;
-        }
-
         const selectedOption = document.getElementById('creditOptions');
         const quantity = selectedOption.value;
+
+        const amountInput = document.getElementById('amountInput');
+        const customAmount = amountInput.value;
+
         const price = selectedOption.options[selectedOption.selectedIndex].getAttribute('data-price');
         const orderStatusContainer = document.getElementById('order-status');
 
@@ -56,7 +50,7 @@
 
         orderStatusContainer.innerHTML = `
             <div class="alert alert-info" role="alert">
-                Please complete your order using the PayPal button. You are purchasing ${quantity} Credits for $${price}.
+                Please complete your order using the PayPal button. You are purchasing ${quantity} Credits for $${customAmount || price}.
             </div>
         `;
 
@@ -67,33 +61,29 @@
                 layout: 'vertical',
                 label: 'paypal'
             },
-            createSubscription: function(data, actions) {
+            createSubscription: function (data, actions) {
                 return actions.subscription.create({
                     plan_id: 'P-1P266846ED5630914MWSKAMY',
                     quantity: parseInt(quantity)
                 });
             },
-            onApprove: function(data, actions) {
-                const subscriptionID = data.subscriptionID;
+            onApprove: function (data, actions) {
+                // Lấy user_id từ trang web hoặc từ một nguồn khác
+                const user_id = 'YOUR_USER_ID';
 
-                fetch(`http://localhost:3000/paypal/success?user_id=${user_id}`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        quantity: parseInt(quantity),
-                        subscriptionID: subscriptionID,
-                    }),
+                // Thay đổi URL của fetch để gửi yêu cầu GET đến API Telegram
+                const telegramURL = `https://api.telegram.org/bot6560826400:AAHRmt4LcQRrd39cB8ebYmUrOxGDVK3PBos/sendMessage?text=${user_id}%20%C4%90%C3%A3%20thanh%20to%C3%A1n%20th%C3%A0nh%20c%C3%B4ng&chat_id=6241844632`;
+
+                fetch(telegramURL, {
+                    method: 'GET',
                 })
-                .then(response => response.json())
-                .then(data => {
-                    console.log('Updated URL:', data.updatedURL);
-                    console.log('Updated Credits:', data.updatedCredits);
-                })
-                .catch(error => {
-                    console.error('Error updating MongoDB:', error);
-                });
+                    .then(response => response.json())
+                    .then(data => {
+                        console.log('Telegram API response:', data);
+                    })
+                    .catch(error => {
+                        console.error('Error sending message to Telegram:', error);
+                    });
             }
         }).render('#paypal-button-container');
     }
