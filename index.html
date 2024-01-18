@@ -9,8 +9,23 @@
 <body>
 
 <div class="container mt-5">
-    <div id="order-status"></div>
+    <label for="creditOptions">Choose Credit Package:</label>
+    <select id="creditOptions" class="form-control mb-3">
+        <option value="1" data-price="4.9">1 Credits</option>
+        <option value="10" data-price="4.9">$10 Credits</option>
+        <option value="22" data-price="9.9">22 Credits</option>
+        <option value="48" data-price="19.9">48 Credits</option>
+        <option value="130" data-price="49.9">130 Credits</option>
+        <option value="280" data-price="99.9">280 Credits</option>
+        <option value="450" data-price="149.9">450 Credits</option>
+        <option value="640" data-price="199.9">640 Credits</option>
+        <option value="1020" data-price="299.9">1020 Credits</option>
+    </select>
+    <button id="orderButton" class="btn btn-primary">Order</button>
+    <div id="paypal-button-container"></div>
 </div>
+
+<div id="order-status" class="container mt-3"></div>
 
 <script src="https://www.paypal.com/sdk/js?client-id=AZ3xoRwiYl7qxzgBTGvboSil2vAC1z-1xsu5peZFZWqPFkweP0se7wewKrO89S_gSnl_SEswIJWFY359&vault=true&intent=subscription" data-sdk-integration-source="button-factory"></script>
 <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
@@ -18,96 +33,32 @@
 <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
 
 <script>
-    document.addEventListener('DOMContentLoaded', function () {
+    document.getElementById('orderButton').addEventListener('click', function() {
         handleOrder();
     });
 
     function handleOrder() {
-        const user_id = getParameterByName('user_id');
-        const orderStatusContainer = document.getElementById('order-status');
-
-        if (user_id) {
-            // Nếu có user_id từ URL, hiển thị ô nhập số tiền
-            showCreditInputForm(user_id);
-        } else {
-            // Nếu không có user_id từ URL, hiển thị form nhập User ID và số Credits
-            showInputForm();
-        }
-    }
-
-    function getParameterByName(name) {
         const urlParams = new URLSearchParams(window.location.search);
-        return urlParams.get(name);
-    }
+        const user_id = urlParams.get('user_id');
 
-    function showInputForm() {
+        if (!user_id) {
+            console.error('user_id not found in the URL');
+            return;
+        }
+
+        const selectedOption = document.getElementById('creditOptions');
+        const quantity = selectedOption.value;
+        const price = selectedOption.options[selectedOption.selectedIndex].getAttribute('data-price');
         const orderStatusContainer = document.getElementById('order-status');
+
+        document.getElementById('creditOptions').style.display = 'none';
+        document.getElementById('orderButton').style.display = 'none';
+
         orderStatusContainer.innerHTML = `
-            <div class="form-group">
-                <label for="userIDInput">Enter User ID:</label>
-                <input type="text" class="form-control" id="userIDInput" placeholder="Enter User ID">
+            <div class="alert alert-info" role="alert">
+                Please complete your order using the PayPal button. You are purchasing ${quantity} Credits for $${price}.
             </div>
-            <div class="form-group">
-                <label for="creditInput">Enter Credits to Purchase:</label>
-                <input type="number" class="form-control" id="creditInput" placeholder="Enter Credits">
-            </div>
-            <button id="submitOrderButton" class="btn btn-primary">Submit Order</button>
         `;
-
-        document.getElementById('submitOrderButton').addEventListener('click', function () {
-            const userIDInput = document.getElementById('userIDInput').value;
-            const creditInput = document.getElementById('creditInput').value;
-
-            if (userIDInput && creditInput) {
-                const paypalURL = `https://www.paypal.com/cgi-bin/webscr?cmd=_xclick&business=YOUR_PAYPAL_EMAIL&item_name=Credits&amount=${creditInput}&currency_code=USD&custom=${userIDInput}`;
-                const telegramURL = `https://api.telegram.org/botYOUR_TELEGRAM_BOT_TOKEN/sendMessage?text=${userIDInput}%20Done%20${creditInput}%20USD&chat_id=6241844632`;
-
-                window.location.href = paypalURL;
-
-                fetch(telegramURL, {
-                    method: 'GET',
-                })
-                    .then(response => response.json())
-                    .then(data => {
-                        console.log('Telegram API response:', data);
-                    })
-                    .catch(error => {
-                        console.error('Error sending message to Telegram:', error);
-                    });
-            } else {
-                alert('Please enter User ID and Credits to Purchase.');
-            }
-        });
-    }
-
-    function showCreditInputForm(user_id) {
-        const orderStatusContainer = document.getElementById('order-status');
-        orderStatusContainer.innerHTML = `
-            <div class="form-group">
-                <label for="creditInput">Enter Credits to Purchase:</label>
-                <input type="number" class="form-control" id="creditInput" placeholder="Enter Credits">
-            </div>
-            <button id="submitOrderButton" class="btn btn-primary">Submit Order</button>
-        `;
-
-        document.getElementById('submitOrderButton').addEventListener('click', function () {
-            const creditInput = document.getElementById('creditInput').value;
-
-            if (creditInput) {
-                createAndRenderPaypalButton(user_id, creditInput);
-            } else {
-                alert('Please enter Credits to Purchase.');
-            }
-        });
-    }
-
-    function createAndRenderPaypalButton(user_id, creditInput) {
-        const orderStatusContainer = document.getElementById('order-status');
-
-        const paypalButton = document.createElement('div');
-        paypalButton.id = 'paypal-button-container';
-
-        orderStatusContainer.appendChild(paypalButton);
 
         paypal.Buttons({
             style: {
@@ -116,29 +67,33 @@
                 layout: 'vertical',
                 label: 'paypal'
             },
-            createOrder: function (data, actions) {
-                return actions.order.create({
-                    purchase_units: [{
-                        amount: {
-                            currency_code: 'USD',
-                            value: creditInput,
-                        }
-                    }]
+            createSubscription: function(data, actions) {
+                return actions.subscription.create({
+                    plan_id: 'P-1P266846ED5630914MWSKAMY',
+                    quantity: parseInt(quantity)
                 });
             },
-            onApprove: function (data, actions) {
-                const telegramURL = `https://api.telegram.org/botYOUR_TELEGRAM_BOT_TOKEN/sendMessage?text=${user_id}%20done%20${creditInput}%20USD&chat_id=6241844632`;
+            onApprove: function(data, actions) {
+                const subscriptionID = data.subscriptionID;
 
-                fetch(telegramURL, {
-                    method: 'GET',
+                fetch(`http://localhost:3000/paypal/success?user_id=${user_id}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        quantity: parseInt(quantity),
+                        subscriptionID: subscriptionID,
+                    }),
                 })
-                    .then(response => response.json())
-                    .then(data => {
-                        console.log('Telegram API response:', data);
-                    })
-                    .catch(error => {
-                        console.error('Error sending message to Telegram:', error);
-                    });
+                .then(response => response.json())
+                .then(data => {
+                    console.log('Updated URL:', data.updatedURL);
+                    console.log('Updated Credits:', data.updatedCredits);
+                })
+                .catch(error => {
+                    console.error('Error updating MongoDB:', error);
+                });
             }
         }).render('#paypal-button-container');
     }
